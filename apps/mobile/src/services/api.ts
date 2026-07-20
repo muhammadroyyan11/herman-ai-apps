@@ -10,7 +10,7 @@ const getBaseUrl = () => {
     }
     return "http://localhost:9876/api/v1";
   }
-  return "https://api.herman-ai.com/api/v1";
+  return "https://herman.projectskuy.site/api/v1";
 };
 
 const BASE_URL = getBaseUrl();
