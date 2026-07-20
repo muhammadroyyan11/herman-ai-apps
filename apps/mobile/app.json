@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Herman AI",
+    "slug": "herman-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/herman_ai.png",
+    "scheme": "herman-ai",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/herman_ai.png",
+      "backgroundColor": "#ffffff",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hermanai.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/herman_ai.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.hermanai.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/herman_ai.png"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
+  }
+}

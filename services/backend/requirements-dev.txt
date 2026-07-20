@@ -1,0 +1,31 @@
+# Core (loose versions for Python 3.13 compat)
+fastapi>=0.100.0
+uvicorn[standard]
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Database
+sqlalchemy[asyncio]>=2.0.0
+aiosqlite>=0.19.0
+alembic>=1.12.0
+
+# Auth
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+bcrypt>=4.0.0
+
+# AI / LLM
+openai>=1.0.0
+httpx>=0.25.0
+
+# File
+python-magic
+python-docx
+markdown
+pillow
+
+# Utils
+python-dotenv
+loguru
+tenacity

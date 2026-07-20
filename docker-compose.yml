@@ -1,0 +1,110 @@
+version: "3.9"
+
+services:
+  # ─── Database ─────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: herman-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_pass
+      MYSQL_DATABASE: herman_ai
+      MYSQL_USER: herman
+      MYSQL_PASSWORD: herman_pass
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./infra/docker/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - herman-network
+
+  # ─── Cache ────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: herman-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - herman-network
+
+  # ─── Vector Database ──────────────────────
+  qdrant:
+    image: qdrant/qdrant:v1.9.0
+    container_name: herman-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - herman-network
+
+  # ─── Backend API ──────────────────────────
+  backend:
+    build:
+      context: ./services/backend
+      dockerfile: ../../infra/docker/backend/Dockerfile
+    container_name: herman-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - mysql
+      - redis
+      - qdrant
+    volumes:
+      - ./services/backend:/app
+      - uploads_data:/app/uploads
+    networks:
+      - herman-network
+
+  # ─── Celery Worker ────────────────────────
+  celery:
+    build:
+      context: ./services/backend
+      dockerfile: ../../infra/docker/backend/Dockerfile
+    container_name: herman-celery
+    restart: unless-stopped
+    command: celery -A app.core.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - ./services/backend:/app
+    networks:
+      - herman-network
+
+  # ─── Nginx ────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: herman-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./infra/docker/nginx/sites:/etc/nginx/sites-enabled
+    depends_on:
+      - backend
+    networks:
+      - herman-network
+
+networks:
+  herman-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
+  qdrant_data:
+  uploads_data:

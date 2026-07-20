@@ -1,0 +1,54 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@herman-ai/types": [
+        "./packages/shared/types"
+      ],
+      "@herman-ai/utils": [
+        "./packages/shared/utils"
+      ],
+      "@herman-ai/constants": [
+        "./packages/shared/constants"
+      ],
+      "@herman-ai/validators": [
+        "./packages/shared/validators"
+      ],
+      "@herman-ai/ui/*": [
+        "./packages/ui/*"
+      ],
+      "@herman-ai/core/*": [
+        "./packages/core/*"
+      ],
+      "@herman-ai/ai/*": [
+        "./packages/ai/*"
+      ]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build"
+  ],
+  "extends": "expo/tsconfig.base"
+}
