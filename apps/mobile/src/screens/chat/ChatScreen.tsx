@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet,
   Platform, ActivityIndicator, Animated, Dimensions, Image,
-  Modal, Keyboard,
+  Modal, Keyboard, Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -44,8 +44,10 @@ export function ChatScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const [inputFocused, setInputFocused] = useState(false);
   const [showWsDropdown, setShowWsDropdown] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [convos, setConvos] = useState<ConversationSummary[]>([]);
   const [loadingConvos, setLoadingConvos] = useState(false);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   const { messages, isStreaming, addMessage, setIsStreaming, currentConversationId, currentWorkspaceId, setCurrentWorkspaceId, clearChat } = useChatStore();
   const [streamContent, setStreamContent] = useState("");
@@ -55,8 +57,14 @@ export function ChatScreen() {
   const [doneNotif, setDoneNotif] = useState("");
 
   useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 150);
+    }
+  }, [currentConversationId]);
+
+  useEffect(() => {
     if (!isStreaming && messages.length > 0) {
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
     }
   }, [messages.length]);
 
@@ -106,6 +114,30 @@ export function ChatScreen() {
 
   const handleNewChat = () => {
     clearChat();
+    setShowMenu(false);
+  };
+
+  const handleDeleteConversation = async () => {
+    if (!currentConversationId) return;
+    setShowMenu(false);
+    Alert.alert("Delete Conversation", "Are you sure?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete", style: "destructive",
+        onPress: async () => {
+          try {
+            await api.deleteConversation(currentConversationId);
+            clearChat();
+            fetchConvos();
+          } catch {}
+        },
+      },
+    ]);
+  };
+
+  const handleBack = () => {
+    clearChat();
+    fetchConvos();
   };
 
   const formatDate = (iso: string) => {
@@ -201,9 +233,24 @@ export function ChatScreen() {
     setStreamContent("");
     setDoneNotif("✅ Done");
     setTimeout(() => setDoneNotif(""), 2000);
+    fetchConvos();
   };
 
   const isEmpty = messages.length === 0;
+
+  const handleScroll = (e: any) => {
+    const offsetY = e.nativeEvent.contentOffset.y;
+    const contentHeight = e.nativeEvent.contentSize.height;
+    const frameHeight = e.nativeEvent.layoutMeasurement.height;
+    const isNearBottom = offsetY + frameHeight >= contentHeight - 100;
+    setShowScrollBtn(!isNearBottom);
+    Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })(e);
+  };
+
+  const scrollToBottom = () => {
+    flatListRef.current?.scrollToEnd({ animated: true });
+    setShowScrollBtn(false);
+  };
 
   const renderEmpty = () => {
     if (convos.length > 0) {
@@ -296,6 +343,11 @@ export function ChatScreen() {
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
+              {!isEmpty ? (
+                <TouchableOpacity style={styles.backBtn} onPress={handleBack}>
+                  <Ionicons name="chevron-back" size={24} color={colors.textSecondary} />
+                </TouchableOpacity>
+              ) : null}
               <View style={styles.headerOrb}>
                 <Image source={require("../../../assets/herman_ai.png")} style={styles.headerLogo} />
               </View>
@@ -309,7 +361,7 @@ export function ChatScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-            <TouchableOpacity style={styles.headerButton}>
+            <TouchableOpacity style={styles.headerButton} onPress={() => setShowMenu(true)}>
               <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -325,7 +377,15 @@ export function ChatScreen() {
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.messageList}
               showsVerticalScrollIndicator={false}
+              onScroll={handleScroll}
+              scrollEventThrottle={100}
             />
+          )}
+
+          {!isEmpty && showScrollBtn && (
+            <TouchableOpacity style={styles.scrollBtn} onPress={scrollToBottom} activeOpacity={0.8}>
+              <Ionicons name="chevron-down" size={22} color={colors.primary} />
+            </TouchableOpacity>
           )}
 
           {/* Done Notification */}
@@ -377,6 +437,27 @@ export function ChatScreen() {
         </View>
       </SafeAreaView>
 
+      {/* Menu Modal */}
+      <Modal visible={showMenu} transparent animation="fade">
+        <TouchableOpacity style={styles.menuOverlay} activeOpacity={1} onPress={() => setShowMenu(false)}>
+          <View style={styles.menu}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleNewChat}>
+              <Ionicons name="add-circle-outline" size={20} color={colors.textSecondary} />
+              <Text style={styles.menuLabel}>New Chat</Text>
+            </TouchableOpacity>
+            {currentConversationId ? (
+              <>
+                <View style={styles.menuDivider} />
+                <TouchableOpacity style={styles.menuItem} onPress={handleDeleteConversation}>
+                  <Ionicons name="trash-outline" size={20} color={colors.error} />
+                  <Text style={[styles.menuLabel, { color: colors.error }]}>Delete Conversation</Text>
+                </TouchableOpacity>
+              </>
+            ) : null}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <Modal visible={showWsDropdown} transparent animation="fade">
         <TouchableOpacity style={styles.dropdownOverlay} activeOpacity={1} onPress={() => setShowWsDropdown(false)}>
           <View style={styles.dropdown}>
@@ -424,6 +505,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.divider,
   },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", marginLeft: -spacing.xs },
   headerOrb: {
     width: 40, height: 40,
     alignItems: "center", justifyContent: "center",
@@ -466,6 +548,14 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
   },
   doneNotifText: { color: "#fff", fontSize: 13, fontWeight: "600" },
+
+  scrollBtn: {
+    position: "absolute", bottom: 80, alignSelf: "center",
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: "#fff", alignItems: "center", justifyContent: "center",
+    ...shadows.md,
+    borderWidth: 0.5, borderColor: colors.divider,
+  },
 
   // Conversation list
   convoHeader: {
@@ -529,6 +619,20 @@ const styles = StyleSheet.create({
     ...shadows.glow,
   },
   sendBtnDisabled: { backgroundColor: colors.surfaceLighter, shadowOpacity: 0 },
+
+  // Menu
+  menuOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-end", paddingBottom: 40 },
+  menu: {
+    marginHorizontal: spacing.lg, backgroundColor: "#fff",
+    borderRadius: borderRadius.lg, padding: spacing.sm,
+    ...shadows.lg,
+  },
+  menuItem: {
+    flexDirection: "row", alignItems: "center", gap: spacing.md,
+    padding: spacing.md, borderRadius: borderRadius.sm,
+  },
+  menuLabel: { ...typography.body, color: colors.textSecondary },
+  menuDivider: { height: 0.5, backgroundColor: colors.divider, marginHorizontal: spacing.md },
 
   // Workspace dropdown
   dropdownOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-start", paddingTop: 100 },
