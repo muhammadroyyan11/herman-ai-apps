@@ -58,3 +58,8 @@ docker-data/
 service-account.json
 *.pem
 credentials.json
+
+# Native
+apps/*/android/
+apps/*/ios/
+.npmrc
