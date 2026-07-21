@@ -8,6 +8,10 @@ from app.core.security.auth import (
     decode_token, get_current_user, get_optional_user
 )
 from app.models.base import User, Session
+from datetime import datetime, timedelta, timezone
+from app.config.settings import get_settings
+
+settings = get_settings()
 
 router = APIRouter()
 
@@ -76,6 +80,7 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
     session = Session(
         user_id=user.id,
         refresh_token=refresh_token,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS),
     )
     db.add(session)
 
