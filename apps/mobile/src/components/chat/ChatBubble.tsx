@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Markdown from "react-native-markdown-display";
-import { colors, spacing, borderRadius, typography, shadows } from "../../styles/theme";
+import { spacing, borderRadius, typography, shadows } from "../../styles/theme";
+import { useTheme } from "../../styles/ThemeProvider";
 
 interface ChatBubbleProps {
   message: {
@@ -13,13 +14,16 @@ interface ChatBubbleProps {
 }
 
 export function ChatBubble({ message }: ChatBubbleProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const markdownStyles = useMemo(() => getMarkdownStyles(colors), [colors]);
+
   const isUser = message.role === "user";
   const isAssistant = message.role === "assistant";
   const isLoading = message.isLoading && !message.content;
 
   return (
     <View style={[styles.container, isUser && styles.userContainer]}>
-      {/* Avatar */}
       {isAssistant && (
         <View style={styles.avatarContainer}>
           <View style={styles.avatar}>
@@ -28,7 +32,6 @@ export function ChatBubble({ message }: ChatBubbleProps) {
         </View>
       )}
 
-      {/* Bubble */}
       <View style={[styles.bubble, isUser ? styles.userBubble : styles.assistantBubble]}>
         {isLoading ? (
           <View style={styles.typingContainer}>
@@ -42,7 +45,6 @@ export function ChatBubble({ message }: ChatBubbleProps) {
           </Text>
         )}
 
-        {/* Timestamp / actions for assistant */}
         {isAssistant && !isLoading && message.content && (
           <View style={styles.actions}>
             <TouchableOpacity style={styles.actionBtn}>
@@ -55,7 +57,6 @@ export function ChatBubble({ message }: ChatBubbleProps) {
         )}
       </View>
 
-      {/* User avatar */}
       {isUser && (
         <View style={[styles.avatarContainer, styles.userAvatarContainer]}>
           <View style={[styles.avatar, styles.userAvatar]}>
@@ -78,120 +79,127 @@ function TypingDots() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    marginBottom: spacing.md,
-    alignItems: "flex-end",
-  },
-  userContainer: {
-    justifyContent: "flex-end",
-  },
-  avatarContainer: {
-    marginRight: spacing.sm,
-  },
-  userAvatarContainer: {
-    marginRight: 0,
-    marginLeft: spacing.sm,
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: colors.primaryGlow,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  userAvatar: {
-    backgroundColor: colors.surfaceLighter,
-  },
-  bubble: {
-    maxWidth: "78%",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.xl,
-  },
-  userBubble: {
-    backgroundColor: colors.userBubble,
-    borderBottomRightRadius: borderRadius.sm,
-    borderWidth: 0.5,
-    borderColor: colors.userBubbleBorder,
-    ...shadows.sm,
-  },
-  assistantBubble: {
-    backgroundColor: colors.assistantBubble,
-    borderBottomLeftRadius: borderRadius.sm,
-    borderWidth: 0.5,
-    borderColor: colors.assistantBubbleBorder,
-    ...shadows.sm,
-  },
-  text: {
-    ...typography.body,
-    color: colors.text,
-  },
-  userText: {
-    color: "#fff",
-  },
-  typingContainer: {
-    paddingVertical: spacing.xs,
-  },
   typingDots: {
     flexDirection: "row",
     gap: 5,
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: 8,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.textSecondary,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-    paddingTop: spacing.xs,
-    borderTopWidth: 0.5,
-    borderTopColor: colors.divider,
-  },
-  actionBtn: {
-    padding: 4,
+    backgroundColor: "#666",
   },
 });
 
-const markdownStyles = {
-  body: { ...typography.body, color: colors.text },
-  heading1: { fontSize: 20, fontWeight: "700" as const, color: colors.text, marginBottom: 4, marginTop: 8 },
-  heading2: { fontSize: 18, fontWeight: "700" as const, color: colors.text, marginBottom: 4, marginTop: 6 },
-  heading3: { fontSize: 16, fontWeight: "600" as const, color: colors.text, marginBottom: 4, marginTop: 4 },
-  paragraph: { marginBottom: 6 },
-  link: { color: colors.primary, textDecorationLine: "underline" as const },
-  code_inline: {
-    backgroundColor: "#f0f0f0", color: "#e53935", paddingHorizontal: 4, paddingVertical: 1,
-    borderRadius: 4, fontFamily: "monospace", fontSize: 13,
-  },
-  code_block: {
-    backgroundColor: "#f5f5f5", color: colors.text, padding: spacing.md,
-    borderRadius: borderRadius.md, fontFamily: "monospace", fontSize: 13,
-    marginVertical: 6,
-  },
-  fence: {
-    backgroundColor: "#f5f5f5", color: colors.text, padding: spacing.md,
-    borderRadius: borderRadius.md, fontFamily: "monospace", fontSize: 13,
-    marginVertical: 6,
-  },
-  blockquote: {
-    backgroundColor: "#f9f9f9", borderLeftWidth: 3, borderLeftColor: colors.primary,
-    paddingLeft: spacing.md, paddingVertical: spacing.xs, marginVertical: 6,
-  },
-  list_item: { marginBottom: 2 },
-  bullet_list: { marginBottom: 6 },
-  ordered_list: { marginBottom: 6 },
-  hr: { backgroundColor: colors.divider, height: 1, marginVertical: 8 },
-  table: { borderWidth: 1, borderColor: colors.divider, marginVertical: 6 },
-  thead: { backgroundColor: "#f5f5f5" },
-  tr: { borderBottomWidth: 1, borderBottomColor: colors.divider },
-  th: { padding: 6, fontWeight: "600" as const },
-  td: { padding: 6 },
-};
+function createStyles(colors: any) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: "row",
+      marginBottom: spacing.md,
+      alignItems: "flex-end",
+    },
+    userContainer: {
+      justifyContent: "flex-end",
+    },
+    avatarContainer: {
+      marginRight: spacing.sm,
+    },
+    userAvatarContainer: {
+      marginRight: 0,
+      marginLeft: spacing.sm,
+    },
+    avatar: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: colors.primaryGlow,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    userAvatar: {
+      backgroundColor: colors.surfaceLighter,
+    },
+    bubble: {
+      maxWidth: "78%",
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.xl,
+    },
+    userBubble: {
+      backgroundColor: colors.userBubble,
+      borderBottomRightRadius: borderRadius.sm,
+      borderWidth: 0.5,
+      borderColor: colors.userBubbleBorder,
+      ...shadows.sm,
+    },
+    assistantBubble: {
+      backgroundColor: colors.assistantBubble,
+      borderBottomLeftRadius: borderRadius.sm,
+      borderWidth: 0.5,
+      borderColor: colors.assistantBubbleBorder,
+      ...shadows.sm,
+    },
+    text: {
+      ...typography.body,
+      color: colors.text,
+    },
+    userText: {
+      color: "#fff",
+    },
+    typingContainer: {
+      paddingVertical: spacing.xs,
+    },
+    actions: {
+      flexDirection: "row",
+      gap: spacing.xs,
+      marginTop: spacing.xs,
+      paddingTop: spacing.xs,
+      borderTopWidth: 0.5,
+      borderTopColor: colors.divider,
+    },
+    actionBtn: {
+      padding: 4,
+    },
+  });
+}
 
-export { markdownStyles };
+function getMarkdownStyles(colors: any) {
+  return {
+    body: { ...typography.body, color: colors.text },
+    heading1: { fontSize: 20, fontWeight: "700" as const, color: colors.text, marginBottom: 4, marginTop: 8 },
+    heading2: { fontSize: 18, fontWeight: "700" as const, color: colors.text, marginBottom: 4, marginTop: 6 },
+    heading3: { fontSize: 16, fontWeight: "600" as const, color: colors.text, marginBottom: 4, marginTop: 4 },
+    paragraph: { marginBottom: 6 },
+    link: { color: colors.primary, textDecorationLine: "underline" as const },
+    code_inline: {
+      backgroundColor: colors.surfaceLighter, color: colors.primary, paddingHorizontal: 4, paddingVertical: 1,
+      borderRadius: 4, fontFamily: "monospace", fontSize: 13,
+    },
+    code_block: {
+      backgroundColor: colors.surfaceLighter, color: colors.text, padding: spacing.md,
+      borderRadius: borderRadius.md, fontFamily: "monospace", fontSize: 13,
+      marginVertical: 6,
+    },
+    fence: {
+      backgroundColor: colors.surfaceLighter, color: colors.text, padding: spacing.md,
+      borderRadius: borderRadius.md, fontFamily: "monospace", fontSize: 13,
+      marginVertical: 6,
+    },
+    blockquote: {
+      backgroundColor: colors.surfaceLighter, borderLeftWidth: 3, borderLeftColor: colors.primary,
+      paddingLeft: spacing.md, paddingVertical: spacing.xs, marginVertical: 6,
+    },
+    list_item: { marginBottom: 2 },
+    bullet_list: { marginBottom: 6 },
+    ordered_list: { marginBottom: 6 },
+    hr: { backgroundColor: colors.divider, height: 1, marginVertical: 8 },
+    table: { borderWidth: 1, borderColor: colors.divider, marginVertical: 6 },
+    thead: { backgroundColor: colors.surfaceLighter },
+    tr: { borderBottomWidth: 1, borderBottomColor: colors.divider },
+    th: { padding: 6, fontWeight: "600" as const },
+    td: { padding: 6 },
+  };
+}
+
+export { getMarkdownStyles as markdownStyles };

@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors, spacing, borderRadius, typography, shadows } from "../../styles/theme";
+import { spacing, borderRadius, typography, shadows } from "../../styles/theme";
+import { useTheme } from "../../styles/ThemeProvider";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useWorkspaceStore, Workspace } from "../../store/useWorkspaceStore";
 import { useChatStore } from "../../store/useChatStore";
@@ -41,12 +42,14 @@ function timeAgo(dateStr: string): string {
 }
 
 export function HomeScreen({ navigation }: any) {
+  const { colors } = useTheme();
   const { user } = useAuthStore();
   const { workspaces, fetchWorkspaces, createWorkspace } = useWorkspaceStore();
   const { setCurrentWorkspaceId } = useChatStore();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [stats, setStats] = useState({ chats: 0, tools: 0, files: 0 });
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   useEffect(() => {
     fetchWorkspaces();
@@ -248,112 +251,114 @@ export function HomeScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fafafa" },
-  safe: { flex: 1 },
-  scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+function createStyles(colors: any) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    safe: { flex: 1 },
+    scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
 
-  greetingRow: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  greeting: { ...typography.h2, color: colors.text },
-  greetingSub: { ...typography.bodySmall, color: colors.textTertiary, marginTop: spacing.xs },
-  profileBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: "#ffffff",
-    alignItems: "center", justifyContent: "center",
-    ...shadows.sm,
-  },
+    greetingRow: {
+      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+      marginBottom: spacing.lg,
+    },
+    greeting: { ...typography.h2, color: colors.text },
+    greetingSub: { ...typography.bodySmall, color: colors.textTertiary, marginTop: spacing.xs },
+    profileBtn: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: colors.surface,
+      alignItems: "center", justifyContent: "center",
+      ...shadows.sm,
+    },
 
-  orbSection: { marginBottom: spacing.xl },
-  orbCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    alignItems: "center",
-    ...shadows.md,
-  },
-  orbImage: { width: 80, height: 80, resizeMode: "contain" },
-  orbTitle: { ...typography.h3, color: colors.text, marginTop: spacing.md },
-  orbSub: { ...typography.bodySmall, color: colors.textTertiary, marginTop: spacing.xs },
-  orbCta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginTop: spacing.lg,
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: borderRadius.full,
-  },
-  orbCtaText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+    orbSection: { marginBottom: spacing.xl },
+    orbCard: {
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.lg,
+      padding: spacing.xl,
+      alignItems: "center",
+      ...shadows.md,
+    },
+    orbImage: { width: 80, height: 80, resizeMode: "contain" },
+    orbTitle: { ...typography.h3, color: colors.text, marginTop: spacing.md },
+    orbSub: { ...typography.bodySmall, color: colors.textTertiary, marginTop: spacing.xs },
+    orbCta: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      marginTop: spacing.lg,
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm + 2,
+      borderRadius: borderRadius.full,
+    },
+    orbCtaText: { color: "#fff", fontSize: 14, fontWeight: "600" },
 
-  sectionHeader: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    marginBottom: spacing.md, marginTop: spacing.sm,
-  },
-  sectionTitle: { ...typography.body, color: colors.text, fontWeight: "700", fontSize: 18 },
-  seeAll: { ...typography.bodySmall, color: colors.primary },
+    sectionHeader: {
+      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+      marginBottom: spacing.md, marginTop: spacing.sm,
+    },
+    sectionTitle: { ...typography.body, color: colors.text, fontWeight: "700", fontSize: 18 },
+    seeAll: { ...typography.bodySmall, color: colors.primary },
 
-  wsScroll: { marginBottom: 0, marginLeft: -spacing.lg, paddingLeft: spacing.lg },
-  wsCard: {
-    backgroundColor: "#ffffff", borderRadius: borderRadius.md,
-    padding: spacing.md, marginRight: spacing.sm, minWidth: 120,
-    alignItems: "center", ...shadows.sm,
-  },
-  wsIcon: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center", marginBottom: spacing.xs },
-  wsName: { ...typography.bodySmall, color: colors.text, fontWeight: "600", marginTop: spacing.xs },
-  wsDesc: { ...typography.caption, color: colors.textTertiary, marginTop: 1 },
+    wsScroll: { marginBottom: 0, marginLeft: -spacing.lg, paddingLeft: spacing.lg },
+    wsCard: {
+      backgroundColor: colors.surface, borderRadius: borderRadius.md,
+      padding: spacing.md, marginRight: spacing.sm, minWidth: 120,
+      alignItems: "center", ...shadows.sm,
+    },
+    wsIcon: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center", marginBottom: spacing.xs },
+    wsName: { ...typography.bodySmall, color: colors.text, fontWeight: "600", marginTop: spacing.xs },
+    wsDesc: { ...typography.caption, color: colors.textTertiary, marginTop: 1 },
 
-  actionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: spacing.lg },
-  actionCard: {
-    width: (width - 48 - 12) / 2,
-    backgroundColor: "#ffffff",
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    ...shadows.sm,
-  },
-  actionIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  actionLabel: { ...typography.bodySmall, color: colors.text, fontWeight: "600" },
-  actionDesc: { ...typography.caption, color: colors.textTertiary, fontSize: 10 },
+    actionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: spacing.lg },
+    actionCard: {
+      width: (width - 48 - 12) / 2,
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.md,
+      padding: spacing.md,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      ...shadows.sm,
+    },
+    actionIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+    actionLabel: { ...typography.bodySmall, color: colors.text, fontWeight: "600" },
+    actionDesc: { ...typography.caption, color: colors.textTertiary, fontSize: 10 },
 
-  chatCard: {
-    flexDirection: "row", alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    ...shadows.sm,
-  },
-  chatIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  chatInfo: { flex: 1, marginLeft: spacing.md },
-  chatTitle: { ...typography.body, color: colors.text, fontWeight: "600" },
-  chatWorkspace: { ...typography.caption, color: colors.primary, fontSize: 10, marginTop: 1 },
-  chatPreview: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },
-  chatTime: { ...typography.caption, color: colors.textTertiary },
+    chatCard: {
+      flexDirection: "row", alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.md,
+      padding: spacing.md,
+      marginBottom: spacing.sm,
+      ...shadows.sm,
+    },
+    chatIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+    chatInfo: { flex: 1, marginLeft: spacing.md },
+    chatTitle: { ...typography.body, color: colors.text, fontWeight: "600" },
+    chatWorkspace: { ...typography.caption, color: colors.primary, fontSize: 10, marginTop: 1 },
+    chatPreview: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },
+    chatTime: { ...typography.caption, color: colors.textTertiary },
 
-  emptyRecent: {
-    alignItems: "center", justifyContent: "center",
-    paddingVertical: spacing.xl,
-    backgroundColor: "#ffffff",
-    borderRadius: borderRadius.md,
-    ...shadows.sm,
-  },
-  emptyText: { ...typography.bodySmall, color: colors.textTertiary, textAlign: "center", marginTop: spacing.sm },
+    emptyRecent: {
+      alignItems: "center", justifyContent: "center",
+      paddingVertical: spacing.xl,
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.md,
+      ...shadows.sm,
+    },
+    emptyText: { ...typography.bodySmall, color: colors.textTertiary, textAlign: "center", marginTop: spacing.sm },
 
-  statsRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.lg },
-  statCard: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    alignItems: "center",
-    ...shadows.sm,
-  },
-  statNumber: { ...typography.h3, color: colors.text, marginTop: spacing.xs },
-  statLabel: { ...typography.caption, color: colors.textSecondary },
-});
+    statsRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.lg },
+    statCard: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.md,
+      padding: spacing.md,
+      alignItems: "center",
+      ...shadows.sm,
+    },
+    statNumber: { ...typography.h3, color: colors.text, marginTop: spacing.xs },
+    statLabel: { ...typography.caption, color: colors.textSecondary },
+  });
+}

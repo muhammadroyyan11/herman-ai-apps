@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { View, Animated, StyleSheet, Easing } from "react-native";
-import { colors } from "../../styles/theme";
+
 
 const orbColor = "#e53935";
 const orbGlow = "rgba(229, 57, 53, 0.6)";

@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView,
   Platform, ActivityIndicator, Dimensions, Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { colors, spacing, borderRadius, typography, shadows } from "../../styles/theme";
+import { spacing, borderRadius, typography, shadows } from "../../styles/theme";
+import { useTheme } from "../../styles/ThemeProvider";
 import { useAuthStore } from "../../store/useAuthStore";
 
 const { width } = Dimensions.get("window");
@@ -17,6 +18,9 @@ export function AuthScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { login, register, isLoading, error, clearError } = useAuthStore();
+  const { colors } = useTheme();
+
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const handleSubmit = async () => {
     try {
@@ -139,15 +143,15 @@ export function AuthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fafafa", justifyContent: "center", paddingHorizontal: spacing.lg },
+function createStyles(colors: any) { return StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background, justifyContent: "center", paddingHorizontal: spacing.lg },
   logoSection: { alignItems: "center", marginBottom: spacing.xl },
   title: { ...typography.h2, color: colors.text, marginTop: spacing.md },
   subtitle: { ...typography.bodySmall, color: colors.textTertiary, marginTop: spacing.xs },
   logoImage: { width: 100, height: 100, resizeMode: "contain" },
 
   formCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     ...shadows.md,
@@ -158,9 +162,9 @@ const styles = StyleSheet.create({
 
   inputGroup: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: colors.surfaceLighter,
     borderRadius: borderRadius.sm,
-    borderWidth: 1, borderColor: "#e0e0e0",
+    borderWidth: 1, borderColor: colors.inputBorder,
     paddingHorizontal: spacing.md,
   },
   inputIcon: { marginRight: spacing.sm },
@@ -191,7 +195,7 @@ const styles = StyleSheet.create({
   guestBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
     padding: spacing.md, borderRadius: borderRadius.sm,
-    borderWidth: 1, borderColor: "#e0e0e0",
+    borderWidth: 1, borderColor: colors.inputBorder,
   },
   guestBtnText: { color: colors.textSecondary, fontSize: 15, flex: 1, textAlign: "center" },
-});
+}); }

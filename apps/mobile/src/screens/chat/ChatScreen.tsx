@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet,
   Platform, ActivityIndicator, Animated, Dimensions, Image,
@@ -6,24 +6,17 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-
+import * as DocumentPicker from "expo-document-picker";
 import { LinearGradient } from "expo-linear-gradient";
-import { colors, spacing, borderRadius, typography, shadows } from "../../styles/theme";
+import { spacing, borderRadius, typography, shadows } from "../../styles/theme";
+import { useTheme } from "../../styles/ThemeProvider";
 import { useChatStore } from "../../store/useChatStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useWorkspaceStore } from "../../store/useWorkspaceStore";
 import { api } from "../../services/api";
 import { ChatBubble } from "../../components/chat/ChatBubble";
 
-
 const { width } = Dimensions.get("window");
-
-const suggestions = [
-  { icon: "code-slash", label: "Write code", color: colors.success },
-  { icon: "bulb", label: "Brainstorm", color: colors.warning },
-  { icon: "language", label: "Translate", color: colors.accent },
-  { icon: "search", label: "Research", color: colors.primary },
-];
 
 interface ConversationSummary {
   id: string;
@@ -38,6 +31,9 @@ interface ConversationSummary {
 }
 
 export function ChatScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [input, setInput] = useState("");
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
@@ -48,6 +44,7 @@ export function ChatScreen() {
   const [convos, setConvos] = useState<ConversationSummary[]>([]);
   const [loadingConvos, setLoadingConvos] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const { messages, isStreaming, addMessage, setIsStreaming, currentConversationId, currentWorkspaceId, setCurrentWorkspaceId, clearChat } = useChatStore();
   const [streamContent, setStreamContent] = useState("");
@@ -138,6 +135,35 @@ export function ChatScreen() {
   const handleBack = () => {
     clearChat();
     fetchConvos();
+  };
+
+  const handleAttach = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf", "text/plain", "text/csv", "application/json",
+               "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+               "image/png", "image/jpeg"],
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets?.[0]) return;
+
+      const file = result.assets[0];
+      setUploading(true);
+
+      await api.uploadDocument({
+        uri: file.uri,
+        name: file.name,
+        type: file.mimeType || "application/octet-stream",
+      });
+
+      setUploading(false);
+      setDoneNotif("✅ File uploaded to knowledge base");
+      setTimeout(() => setDoneNotif(""), 3000);
+    } catch (err: any) {
+      setUploading(false);
+      Alert.alert("Upload Failed", err?.response?.data?.detail || err?.message || "Could not upload file");
+    }
   };
 
   const formatDate = (iso: string) => {
@@ -253,6 +279,13 @@ export function ChatScreen() {
   };
 
   const renderEmpty = () => {
+    const suggestions = [
+      { icon: "code-slash", label: "Write code" },
+      { icon: "bulb", label: "Brainstorm" },
+      { icon: "language", label: "Translate" },
+      { icon: "search", label: "Research" },
+    ];
+
     if (convos.length > 0) {
       return (
         <View style={styles.convoListContainer}>
@@ -312,19 +345,25 @@ export function ChatScreen() {
           </Text>
 
           <View style={styles.suggestionsGrid}>
-            {suggestions.map((item) => (
-              <TouchableOpacity
-                key={item.label}
-                style={styles.suggestionCard}
-                onPress={() => setInput(item.label.toLowerCase())}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.suggestionIcon, { backgroundColor: item.color + "15" }]}>
-                  <Ionicons name={item.icon as any} size={22} color={item.color} />
-                </View>
-                <Text style={styles.suggestionLabel}>{item.label}</Text>
-              </TouchableOpacity>
-            ))}
+            {suggestions.map((item) => {
+              const sc = item.label === "Write code" ? colors.success
+                       : item.label === "Brainstorm" ? colors.warning
+                       : item.label === "Translate" ? colors.accent
+                       : colors.primary;
+              return (
+                <TouchableOpacity
+                  key={item.label}
+                  style={styles.suggestionCard}
+                  onPress={() => setInput(item.label.toLowerCase())}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.suggestionIcon, { backgroundColor: sc + "15" }]}>
+                    <Ionicons name={item.icon as any} size={22} color={sc} />
+                  </View>
+                  <Text style={styles.suggestionLabel}>{item.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
       </View>
@@ -334,7 +373,7 @@ export function ChatScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["rgba(74, 158, 255, 0.08)", "transparent"]}
+        colors={[colors.primaryGlow, "transparent"]}
         style={styles.headerGradient}
       />
 
@@ -399,8 +438,12 @@ export function ChatScreen() {
           {/* Input Bar */}
           <View style={[styles.inputWrapper, inputFocused && styles.inputWrapperFocused, kbHeight > 0 && { marginBottom: 0 }]}>
             <View style={styles.inputBar}>
-              <TouchableOpacity style={styles.attachBtn}>
-                <Ionicons name="add" size={22} color={colors.primary} />
+              <TouchableOpacity style={styles.attachBtn} onPress={handleAttach} disabled={uploading}>
+                {uploading ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Ionicons name="add" size={22} color={colors.primary} />
+                )}
               </TouchableOpacity>
               <TextInput
                 ref={inputRef}
@@ -493,160 +536,168 @@ export function ChatScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  headerGradient: {
-    position: "absolute", top: 0, left: 0, right: 0, height: 200,
-  },
-  safeArea: { flex: 1 },
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.divider,
-  },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", marginLeft: -spacing.xs },
-  headerOrb: {
-    width: 40, height: 40,
-    alignItems: "center", justifyContent: "center",
-  },
-  headerLogo: { width: 36, height: 36, borderRadius: 18, resizeMode: "contain" },
-  emptyImage: { width: 120, height: 120, resizeMode: "contain" },
-  headerTitle: { ...typography.h3, color: colors.text },
-  headerStatus: { ...typography.caption, color: colors.success },
-  wsBadge: {
-    flexDirection: "row", alignItems: "center", gap: 4, marginTop: 1,
-  },
-  wsBadgeText: { ...typography.caption, color: colors.primary, fontWeight: "600" },
-  headerButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surfaceLight, alignItems: "center", justifyContent: "center" },
+function createStyles(colors: any) {
+  const suggestions = [
+    { icon: "code-slash", label: "Write code" },
+    { icon: "bulb", label: "Brainstorm" },
+    { icon: "language", label: "Translate" },
+    { icon: "search", label: "Research" },
+  ];
 
-  // Empty state
-  convoListContainer: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
-  emptyContainer: { flex: 1, justifyContent: "center" },
-  emptyContent: { alignItems: "center", paddingHorizontal: spacing.xl },
-  emptyTitle: { ...typography.h2, color: colors.text, marginTop: spacing.lg },
-  emptySubtitle: { ...typography.bodySmall, color: colors.textTertiary, marginTop: spacing.sm, textAlign: "center" },
-  suggestionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.xl, justifyContent: "center" },
-  suggestionCard: {
-    width: (width - 80) / 2,
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    alignItems: "center",
-    borderWidth: 0.5,
-    borderColor: colors.glassBorder,
-  },
-  suggestionIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center", marginBottom: spacing.sm },
-  suggestionLabel: { ...typography.caption, color: colors.textSecondary },
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    headerGradient: {
+      position: "absolute", top: 0, left: 0, right: 0, height: 200,
+    },
+    safeArea: { flex: 1 },
+    header: {
+      flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+      paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
+      borderBottomWidth: 0.5, borderBottomColor: colors.divider,
+    },
+    headerLeft: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+    backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", marginLeft: -spacing.xs },
+    headerOrb: {
+      width: 40, height: 40,
+      alignItems: "center", justifyContent: "center",
+    },
+    headerLogo: { width: 36, height: 36, borderRadius: 18, resizeMode: "contain" },
+    emptyImage: { width: 120, height: 120, resizeMode: "contain" },
+    headerTitle: { ...typography.h3, color: colors.text },
+    wsBadge: {
+      flexDirection: "row", alignItems: "center", gap: 4, marginTop: 1,
+    },
+    wsBadgeText: { ...typography.caption, color: colors.primary, fontWeight: "600" },
+    headerButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surfaceLight, alignItems: "center", justifyContent: "center" },
 
-  // Messages
-  messageList: { padding: spacing.md, paddingBottom: spacing.sm },
-  doneNotif: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.xs,
-    backgroundColor: colors.success, paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
-    marginHorizontal: spacing.md, marginBottom: spacing.sm,
-    borderRadius: borderRadius.sm,
-  },
-  doneNotifText: { color: "#fff", fontSize: 13, fontWeight: "600" },
+    // Empty state
+    convoListContainer: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
+    emptyContainer: { flex: 1, justifyContent: "center" },
+    emptyContent: { alignItems: "center", paddingHorizontal: spacing.xl },
+    emptyTitle: { ...typography.h2, color: colors.text, marginTop: spacing.lg },
+    emptySubtitle: { ...typography.bodySmall, color: colors.textTertiary, marginTop: spacing.sm, textAlign: "center" },
+    suggestionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.xl, justifyContent: "center" },
+    suggestionCard: {
+      width: (width - 80) / 2,
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.lg,
+      padding: spacing.md,
+      alignItems: "center",
+      borderWidth: 0.5,
+      borderColor: colors.glassBorder,
+    },
+    suggestionIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center", marginBottom: spacing.sm },
+    suggestionLabel: { ...typography.caption, color: colors.textSecondary },
 
-  scrollBtn: {
-    position: "absolute", bottom: 80, alignSelf: "center",
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: "#fff", alignItems: "center", justifyContent: "center",
-    ...shadows.md,
-    borderWidth: 0.5, borderColor: colors.divider,
-  },
+    // Messages
+    messageList: { padding: spacing.md, paddingBottom: spacing.sm },
+    doneNotif: {
+      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.xs,
+      backgroundColor: colors.success, paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
+      marginHorizontal: spacing.md, marginBottom: spacing.sm,
+      borderRadius: borderRadius.sm,
+    },
+    doneNotifText: { color: "#fff", fontSize: 13, fontWeight: "600" },
 
-  // Conversation list
-  convoHeader: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    width: "100%", marginBottom: spacing.md, marginTop: spacing.sm,
-  },
-  convoHeaderTitle: { ...typography.body, color: colors.text, fontWeight: "700", fontSize: 16 },
-  newChatBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: spacing.xs, paddingHorizontal: spacing.sm },
-  newChatBtnText: { ...typography.bodySmall, color: colors.primary, fontWeight: "600" },
-  convoGroup: { width: "100%", marginBottom: spacing.md },
-  convoGroupLabel: { ...typography.caption, color: colors.textTertiary, fontWeight: "600", marginBottom: spacing.sm, textTransform: "uppercase", fontSize: 11, letterSpacing: 0.5 },
-  convoCard: {
-    flexDirection: "row", alignItems: "center",
-    paddingVertical: spacing.md, paddingHorizontal: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.divider,
-  },
-  convoIcon: {
-    width: 36, height: 36, borderRadius: 10,
-    alignItems: "center", justifyContent: "center",
-  },
-  convoInfo: { flex: 1, marginLeft: spacing.md },
-  convoTitle: { ...typography.body, color: colors.text, fontWeight: "500" },
-  convoMeta: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },
+    scrollBtn: {
+      position: "absolute", bottom: 80, alignSelf: "center",
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: colors.surface, alignItems: "center", justifyContent: "center",
+      ...shadows.md,
+      borderWidth: 0.5, borderColor: colors.divider,
+    },
 
-  // Input
-  inputWrapper: {
-    marginHorizontal: spacing.md,
-    marginBottom: Platform.OS === "ios" ? spacing.xl : spacing.md,
-    borderRadius: borderRadius.xxl,
-    backgroundColor: colors.inputBg,
-    borderWidth: 1,
-    borderColor: colors.inputBorder,
-    ...shadows.sm,
-  },
-  inputWrapperFocused: {
-    borderColor: colors.inputBorderFocus,
-    ...shadows.md,
-  },
-  inputBar: {
-    flexDirection: "row", alignItems: "flex-end",
-    paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
-  },
-  attachBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: colors.primaryGlow,
-    alignItems: "center", justifyContent: "center",
-  },
-  input: {
-    flex: 1, color: colors.text, fontSize: 16,
-    maxHeight: 120, paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  micBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    alignItems: "center", justifyContent: "center",
-  },
-  sendBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: colors.primary,
-    alignItems: "center", justifyContent: "center",
-    ...shadows.glow,
-  },
-  sendBtnDisabled: { backgroundColor: colors.surfaceLighter, shadowOpacity: 0 },
+    // Conversation list
+    convoHeader: {
+      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+      width: "100%", marginBottom: spacing.md, marginTop: spacing.sm,
+    },
+    convoHeaderTitle: { ...typography.body, color: colors.text, fontWeight: "700", fontSize: 16 },
+    newChatBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: spacing.xs, paddingHorizontal: spacing.sm },
+    newChatBtnText: { ...typography.bodySmall, color: colors.primary, fontWeight: "600" },
+    convoGroup: { width: "100%", marginBottom: spacing.md },
+    convoGroupLabel: { ...typography.caption, color: colors.textTertiary, fontWeight: "600", marginBottom: spacing.sm, textTransform: "uppercase", fontSize: 11, letterSpacing: 0.5 },
+    convoCard: {
+      flexDirection: "row", alignItems: "center",
+      paddingVertical: spacing.md, paddingHorizontal: spacing.sm,
+      borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.divider,
+    },
+    convoIcon: {
+      width: 36, height: 36, borderRadius: 10,
+      alignItems: "center", justifyContent: "center",
+    },
+    convoInfo: { flex: 1, marginLeft: spacing.md },
+    convoTitle: { ...typography.body, color: colors.text, fontWeight: "500" },
+    convoMeta: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },
 
-  // Menu
-  menuOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-end", paddingBottom: 40 },
-  menu: {
-    marginHorizontal: spacing.lg, backgroundColor: "#fff",
-    borderRadius: borderRadius.lg, padding: spacing.sm,
-    ...shadows.lg,
-  },
-  menuItem: {
-    flexDirection: "row", alignItems: "center", gap: spacing.md,
-    padding: spacing.md, borderRadius: borderRadius.sm,
-  },
-  menuLabel: { ...typography.body, color: colors.textSecondary },
-  menuDivider: { height: 0.5, backgroundColor: colors.divider, marginHorizontal: spacing.md },
+    // Input
+    inputWrapper: {
+      marginHorizontal: spacing.md,
+      marginBottom: Platform.OS === "ios" ? spacing.xl : spacing.md,
+      borderRadius: borderRadius.xxl,
+      backgroundColor: colors.inputBg,
+      borderWidth: 1,
+      borderColor: colors.inputBorder,
+      ...shadows.sm,
+    },
+    inputWrapperFocused: {
+      borderColor: colors.inputBorderFocus,
+      ...shadows.md,
+    },
+    inputBar: {
+      flexDirection: "row", alignItems: "flex-end",
+      paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
+    },
+    attachBtn: {
+      width: 36, height: 36, borderRadius: 18,
+      backgroundColor: colors.primaryGlow,
+      alignItems: "center", justifyContent: "center",
+    },
+    input: {
+      flex: 1, color: colors.text, fontSize: 16,
+      maxHeight: 120, paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    micBtn: {
+      width: 36, height: 36, borderRadius: 18,
+      alignItems: "center", justifyContent: "center",
+    },
+    sendBtn: {
+      width: 36, height: 36, borderRadius: 18,
+      backgroundColor: colors.primary,
+      alignItems: "center", justifyContent: "center",
+      ...shadows.glow,
+    },
+    sendBtnDisabled: { backgroundColor: colors.surfaceLighter, shadowOpacity: 0 },
 
-  // Workspace dropdown
-  dropdownOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-start", paddingTop: 100 },
-  dropdown: {
-    marginHorizontal: spacing.lg, backgroundColor: "#fff",
-    borderRadius: borderRadius.lg, padding: spacing.sm,
-    ...shadows.lg,
-  },
-  dropdownItem: {
-    flexDirection: "row", alignItems: "center", gap: spacing.sm,
-    padding: spacing.md, borderRadius: borderRadius.sm,
-  },
-  dropdownItemActive: { backgroundColor: colors.primaryGlow },
-  dropdownIcon: { width: 32, height: 32, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  dropdownLabel: { flex: 1, ...typography.body, color: colors.textSecondary },
-  dropdownLabelActive: { color: colors.primary, fontWeight: "600" },
-});
+    // Menu
+    menuOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: "flex-end", paddingBottom: 40 },
+    menu: {
+      marginHorizontal: spacing.lg, backgroundColor: colors.surface,
+      borderRadius: borderRadius.lg, padding: spacing.sm,
+      ...shadows.lg,
+    },
+    menuItem: {
+      flexDirection: "row", alignItems: "center", gap: spacing.md,
+      padding: spacing.md, borderRadius: borderRadius.sm,
+    },
+    menuLabel: { ...typography.body, color: colors.textSecondary },
+    menuDivider: { height: 0.5, backgroundColor: colors.divider, marginHorizontal: spacing.md },
+
+    // Workspace dropdown
+    dropdownOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: "flex-start", paddingTop: 100 },
+    dropdown: {
+      marginHorizontal: spacing.lg, backgroundColor: colors.surface,
+      borderRadius: borderRadius.lg, padding: spacing.sm,
+      ...shadows.lg,
+    },
+    dropdownItem: {
+      flexDirection: "row", alignItems: "center", gap: spacing.sm,
+      padding: spacing.md, borderRadius: borderRadius.sm,
+    },
+    dropdownItemActive: { backgroundColor: colors.primaryGlow },
+    dropdownIcon: { width: 32, height: 32, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+    dropdownLabel: { flex: 1, ...typography.body, color: colors.textSecondary },
+    dropdownLabelActive: { color: colors.primary, fontWeight: "600" },
+  });
+}

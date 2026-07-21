@@ -181,6 +181,34 @@ class ApiService {
     return this.client.delete(`/workspaces/${id}`);
   }
 
+  // RAG / Documents
+  async uploadDocument(file: { uri: string; name: string; type: string }, onProgress?: (progress: number) => void) {
+    const formData = new FormData();
+    formData.append("file", {
+      uri: file.uri,
+      name: file.name,
+      type: file.type,
+    } as any);
+
+    const token = await getToken();
+    return this.client.post("/rag/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      onUploadProgress: onProgress
+        ? (event) => onProgress(Math.round((event.loaded / (event.total || 1)) * 100))
+        : undefined,
+    });
+  }
+
+  async queryRag(query: string, limit: number = 5) {
+    return this.client.post("/rag/query", { query, limit });
+  }
+
+  async deleteDocument(documentId: string) {
+    return this.client.delete(`/rag/documents/${documentId}`);
+  }
+
   // Memory
   async getMemories() {
     return this.client.get("/memory");

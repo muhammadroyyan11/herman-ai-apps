@@ -2,8 +2,8 @@ import React, { useEffect } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
-import { View, StyleSheet, ActivityIndicator } from "react-native";
-import { colors } from "../styles/theme";
+import { View, ActivityIndicator } from "react-native";
+import { useTheme } from "../styles/ThemeProvider";
 
 import { HomeScreen } from "../screens/home/HomeScreen";
 import { ChatScreen } from "../screens/chat/ChatScreen";
@@ -16,14 +16,17 @@ import { useAuthStore } from "../store/useAuthStore";
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-function TabIcon({ name, focused }: { name: string; focused: boolean }) {
+function TabIcon({ name, focused, color }: { name: string; focused: boolean; color: string }) {
   return (
-    <View style={[styles.tabIconContainer, focused && styles.tabIconActive]}>
-      <Ionicons
-        name={name as any}
-        size={22}
-        color={focused ? colors.primary : colors.textTertiary}
-      />
+    <View style={{
+      width: 36,
+      height: 28,
+      borderRadius: 8,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: focused ? color + "20" : "transparent",
+    }}>
+      <Ionicons name={name as any} size={22} color={color} />
     </View>
   );
 }
@@ -40,12 +43,14 @@ function WorkspaceStack() {
 }
 
 function TabNavigator() {
+  const { colors } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#ffffff",
+          backgroundColor: colors.surface,
           borderTopColor: "transparent",
           borderTopWidth: 0,
           height: 82,
@@ -71,7 +76,7 @@ function TabNavigator() {
         component={HomeScreen}
         options={{
           tabBarLabel: "Home",
-          tabBarIcon: ({ focused }) => <TabIcon name="home" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="home" focused={focused} color={focused ? colors.primary : colors.textTertiary} />,
         }}
       />
       <Tab.Screen
@@ -79,7 +84,7 @@ function TabNavigator() {
         component={ChatScreen}
         options={{
           tabBarLabel: "Chat",
-          tabBarIcon: ({ focused }) => <TabIcon name="chatbubble-ellipses" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="chatbubble-ellipses" focused={focused} color={focused ? colors.primary : colors.textTertiary} />,
         }}
       />
       <Tab.Screen
@@ -87,7 +92,7 @@ function TabNavigator() {
         component={WorkspaceStack}
         options={{
           tabBarLabel: "Workspace",
-          tabBarIcon: ({ focused }) => <TabIcon name="grid" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="grid" focused={focused} color={focused ? colors.primary : colors.textTertiary} />,
         }}
         listeners={({ navigation }) => ({
           tabPress: (e: any) => {
@@ -106,7 +111,7 @@ function TabNavigator() {
         component={SettingsScreen}
         options={{
           tabBarLabel: "Settings",
-          tabBarIcon: ({ focused }) => <TabIcon name="settings" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="settings" focused={focused} color={focused ? colors.primary : colors.textTertiary} />,
         }}
       />
     </Tab.Navigator>
@@ -115,6 +120,7 @@ function TabNavigator() {
 
 export function RootNavigator() {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
+  const { colors } = useTheme();
 
   useEffect(() => {
     checkAuth();
@@ -142,16 +148,3 @@ export function RootNavigator() {
     </Stack.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  tabIconContainer: {
-    width: 36,
-    height: 28,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tabIconActive: {
-    backgroundColor: "rgba(229, 57, 53, 0.1)",
-  },
-});

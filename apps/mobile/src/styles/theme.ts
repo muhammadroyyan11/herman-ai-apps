@@ -1,4 +1,4 @@
-export const colors = {
+export const lightColors = {
   background: "#ffffff",
   surface: "#ffffff",
   surfaceLight: "#fafafa",
@@ -39,6 +39,49 @@ export const colors = {
 
   divider: "#eeeeee",
   overlay: "rgba(0, 0, 0, 0.5)",
+};
+
+export const darkColors = {
+  background: "#121212",
+  surface: "#1e1e1e",
+  surfaceLight: "#252525",
+  surfaceLighter: "#2a2a2a",
+
+  primary: "#ef5350",
+  primaryDark: "#e53935",
+  primaryLight: "#ff6b6b",
+  primaryGlow: "rgba(239, 83, 80, 0.15)",
+  primaryGlowStrong: "rgba(239, 83, 80, 0.3)",
+
+  accent: "#ff5252",
+  accentGlow: "rgba(255, 82, 82, 0.15)",
+
+  text: "#f0f0f0",
+  textSecondary: "#aaaaaa",
+  textTertiary: "#777777",
+
+  success: "#66bb6a",
+  successGlow: "rgba(102, 187, 106, 0.15)",
+  warning: "#ffa726",
+  warningGlow: "rgba(255, 167, 38, 0.15)",
+  error: "#ef5350",
+  errorGlow: "rgba(239, 83, 80, 0.15)",
+
+  glass: "#1e1e1e",
+  glassBorder: "#333333",
+  glassBorderActive: "#ef5350",
+
+  userBubble: "#ef5350",
+  userBubbleBorder: "rgba(239, 83, 80, 0.3)",
+  assistantBubble: "#2a2a2a",
+  assistantBubbleBorder: "#333333",
+
+  inputBg: "#2a2a2a",
+  inputBorder: "#333333",
+  inputBorderFocus: "#ef5350",
+
+  divider: "#2a2a2a",
+  overlay: "rgba(0, 0, 0, 0.7)",
 };
 
 export const spacing = {

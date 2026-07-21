@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions,
   ActivityIndicator, Modal, TextInput, Alert,
@@ -6,7 +6,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import { colors, spacing, borderRadius, typography, shadows } from "../../styles/theme";
+import { spacing, borderRadius, typography, shadows } from "../../styles/theme";
+import { useTheme } from "../../styles/ThemeProvider";
 import { useWorkspaceStore, Workspace } from "../../store/useWorkspaceStore";
 import { useChatStore } from "../../store/useChatStore";
 
@@ -39,6 +40,9 @@ export function WorkspaceScreen() {
   const [icon, setIcon] = useState("code-slash");
   const [color, setColor] = useState("#4CAF50");
   const [instruction, setInstruction] = useState("");
+
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   useEffect(() => {
     fetchWorkspaces();
@@ -225,95 +229,97 @@ export function WorkspaceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fafafa" },
-  safe: { flex: 1 },
-  header: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm,
-  },
-  headerTitle: { ...typography.h2, color: colors.text },
-  headerSub: { ...typography.bodySmall, color: colors.textTertiary, marginTop: 2 },
-  addBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: colors.primary, alignItems: "center", justifyContent: "center",
-    ...shadows.md,
-  },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.xl },
-  errorText: { color: colors.error, ...typography.bodySmall, textAlign: "center", marginTop: spacing.sm },
-  retryBtn: {
-    marginTop: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md, backgroundColor: colors.primary,
-  },
-  retryText: { color: "#fff", ...typography.bodySmall },
-  emptyTitle: { ...typography.h3, color: colors.text, marginTop: spacing.md },
-  emptySub: { ...typography.bodySmall, color: colors.textTertiary, marginTop: spacing.xs },
-  createBtn: {
-    flexDirection: "row", alignItems: "center", gap: spacing.sm,
-    marginTop: spacing.lg, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md, backgroundColor: colors.primary,
-  },
-  createBtnText: { color: "#fff", ...typography.bodySmall },
-  scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+function createStyles(colors: any) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    safe: { flex: 1 },
+    header: {
+      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+      paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm,
+    },
+    headerTitle: { ...typography.h2, color: colors.text },
+    headerSub: { ...typography.bodySmall, color: colors.textTertiary, marginTop: 2 },
+    addBtn: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: colors.primary, alignItems: "center", justifyContent: "center",
+      ...shadows.md,
+    },
+    center: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.xl },
+    errorText: { color: colors.error, ...typography.bodySmall, textAlign: "center", marginTop: spacing.sm },
+    retryBtn: {
+      marginTop: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
+      borderRadius: borderRadius.md, backgroundColor: colors.primary,
+    },
+    retryText: { color: "#fff", ...typography.bodySmall },
+    emptyTitle: { ...typography.h3, color: colors.text, marginTop: spacing.md },
+    emptySub: { ...typography.bodySmall, color: colors.textTertiary, marginTop: spacing.xs },
+    createBtn: {
+      flexDirection: "row", alignItems: "center", gap: spacing.sm,
+      marginTop: spacing.lg, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
+      borderRadius: borderRadius.md, backgroundColor: colors.primary,
+    },
+    createBtnText: { color: "#fff", ...typography.bodySmall },
+    scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
+    grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
 
-  card: {
-    width: cardWidth,
-    backgroundColor: "#ffffff",
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    ...shadows.sm,
-  },
-  cardTop: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start",
-    marginBottom: spacing.sm,
-  },
-  iconBox: {
-    width: 44, height: 44, borderRadius: 12,
-    alignItems: "center", justifyContent: "center",
-  },
-  cardName: { ...typography.body, color: colors.text, fontWeight: "600", marginBottom: 2 },
-  cardDesc: { ...typography.caption, color: colors.textTertiary },
-  cardType: {
-    ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs,
-    textTransform: "capitalize",
-  },
+    card: {
+      width: cardWidth,
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.md,
+      padding: spacing.md,
+      ...shadows.sm,
+    },
+    cardTop: {
+      flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start",
+      marginBottom: spacing.sm,
+    },
+    iconBox: {
+      width: 44, height: 44, borderRadius: 12,
+      alignItems: "center", justifyContent: "center",
+    },
+    cardName: { ...typography.body, color: colors.text, fontWeight: "600", marginBottom: 2 },
+    cardDesc: { ...typography.caption, color: colors.textTertiary },
+    cardType: {
+      ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs,
+      textTransform: "capitalize",
+    },
 
-  modalOverlay: {
-    flex: 1, backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "flex-end",
-  },
-  modal: {
-    backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: spacing.xl, paddingBottom: 40,
-  },
-  modalHeader: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  modalTitle: { ...typography.h3, color: colors.text },
-  modalInput: {
-    borderWidth: 1, borderColor: colors.inputBorder, borderRadius: borderRadius.md,
-    padding: spacing.md, fontSize: 16, color: colors.text,
-    marginBottom: spacing.md,
-  },
-  modalLabel: { ...typography.body, color: colors.text, fontWeight: "600", marginBottom: spacing.sm },
-  modalSubLabel: { ...typography.caption, color: colors.textTertiary, marginBottom: spacing.sm, marginTop: -spacing.sm },
-  iconRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: spacing.md },
-  iconOption: {
-    width: 40, height: 40, borderRadius: 10,
-    alignItems: "center", justifyContent: "center",
-    backgroundColor: "#f5f5f5",
-  },
-  iconOptionActive: { backgroundColor: colors.primaryGlow, borderWidth: 1, borderColor: colors.primary },
-  colorRow: { flexDirection: "row", gap: 10, marginBottom: spacing.lg },
-  colorOption: { width: 32, height: 32, borderRadius: 16 },
-  colorOptionActive: { width: 36, height: 36, borderRadius: 18, borderWidth: 3, borderColor: "#333" },
-  instructionInput: { minHeight: 100, textAlignVertical: "top" },
-  submitBtn: {
-    backgroundColor: colors.primary, borderRadius: borderRadius.md,
-    padding: spacing.md, alignItems: "center",
-  },
-  submitBtnDisabled: { opacity: 0.5 },
-  submitText: { color: "#fff", ...typography.body, fontWeight: "600" },
-});
+    modalOverlay: {
+      flex: 1, backgroundColor: colors.overlay,
+      justifyContent: "flex-end",
+    },
+    modal: {
+      backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+      padding: spacing.xl, paddingBottom: 40,
+    },
+    modalHeader: {
+      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+      marginBottom: spacing.lg,
+    },
+    modalTitle: { ...typography.h3, color: colors.text },
+    modalInput: {
+      borderWidth: 1, borderColor: colors.inputBorder, borderRadius: borderRadius.md,
+      padding: spacing.md, fontSize: 16, color: colors.text,
+      marginBottom: spacing.md,
+    },
+    modalLabel: { ...typography.body, color: colors.text, fontWeight: "600", marginBottom: spacing.sm },
+    modalSubLabel: { ...typography.caption, color: colors.textTertiary, marginBottom: spacing.sm, marginTop: -spacing.sm },
+    iconRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: spacing.md },
+    iconOption: {
+      width: 40, height: 40, borderRadius: 10,
+      alignItems: "center", justifyContent: "center",
+      backgroundColor: colors.surfaceLighter,
+    },
+    iconOptionActive: { backgroundColor: colors.primaryGlow, borderWidth: 1, borderColor: colors.primary },
+    colorRow: { flexDirection: "row", gap: 10, marginBottom: spacing.lg },
+    colorOption: { width: 32, height: 32, borderRadius: 16 },
+    colorOptionActive: { width: 36, height: 36, borderRadius: 18, borderWidth: 3, borderColor: colors.text },
+    instructionInput: { minHeight: 100, textAlignVertical: "top" },
+    submitBtn: {
+      backgroundColor: colors.primary, borderRadius: borderRadius.md,
+      padding: spacing.md, alignItems: "center",
+    },
+    submitBtnDisabled: { opacity: 0.5 },
+    submitText: { color: "#fff", ...typography.body, fontWeight: "600" },
+  });
+}
